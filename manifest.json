@@ -1,0 +1,11 @@
+{
+	"id": "zettel-anki",
+	"name": "Zettel Anki",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "Zettelkasten with Anki",
+	"author": "Dorage-San",
+	"authorUrl": "https://github.com/dorage",
+	"fundingUrl": "",
+	"isDesktopOnly": true
+}
