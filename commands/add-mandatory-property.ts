@@ -9,6 +9,7 @@ interface MandatoryProperties {
 const mandatoryProperties: MandatoryProperties[] = [
 	{ name: "id", value: () => Date.now().toString() },
 	{ name: "anki", value: () => "true" },
+	{ name: "tags", value: () => "" },
 ];
 
 const addMandatoryProperties: EditorCallback = async (_, ctx) => {

@@ -4,15 +4,29 @@
 // 2. '---'로 닫혀야 하고, 그 사이에는 항상 다음 property 규칙이 적용된다
 // 3. ^{name}[ ]*:[ ]*{value}*$
 // 4. 특이사항으로는 값이 있는 property의 경우 콜론 뒤에 무조건 한 칸 이상의 띄어쓰는 규칙이 적용된다
+
+const Regex = {
+	// $1 - property section
+	PropertySection: new RegExp(`^---\n(.*\n)*?---`),
+	// $1 - key, $2 - value
+	Property:
+		/(?:^([\w\d _-]*)[ ]*[:][ ]*(?:\n(?:([ \-_\w\d\n]*$)*)|(?:(.*)$)))/gm,
+	Content: new RegExp(`^---\n(?:.*\n)*?---\n((?:.*[\n]?)*)`, "m"),
+	// $1 - Front, $2 - Back
+	ContentFrontBack: new RegExp(`((?:.*\n)*)---\n((?:.*\n?)*)`),
+};
+
+// propertySection 만 반환
+const extractPropertySection = (content: string): string | null => {
+	return content.match(Regex.PropertySection)?.[0] ?? null;
+};
+
+const extractContent = (content: string): string | null => {
+	return content.match(Regex.Content)?.[1] ?? null;
+};
+
 const hasPropertySection = (content: string): boolean => {
-	const match = content.match(
-		/(?:---)\n(?:(?:[^ :\n]+)[ ]*:[ ]+(?:[^ :\n]+)[\n])*/gm,
-	);
-
-	if (match == null) return false;
-	const lines = content.split("\n");
-
-	return lines[0] === "---";
+	return extractPropertySection(content) != null;
 };
 
 const hasProperty = (content: string, name: string): boolean => {
@@ -31,4 +45,49 @@ const hasProperty = (content: string, name: string): boolean => {
 	return false;
 };
 
-export { hasProperty, hasPropertySection };
+const ObsidianFormats: { [key in string]: [RegExp, string] } = {
+	LineBreak: [/\n/g, "<br/>"],
+	InternalResource: [/!\[\[([^\]]+)\]\]/g, `![]($1)`],
+	InternalLink: [/\[\[([^\]]+)\]\]/g, `'$1'`],
+};
+
+const obsidianToMarkdown = (obsidianMd: string) => {
+	return obsidianMd
+		.replace(...ObsidianFormats.LineBreak)
+		.replace(...ObsidianFormats.InternalResource)
+		.replace(...ObsidianFormats.InternalLink);
+};
+
+// property들을 오브젝트로 반환
+const parseProperties = (propertySection: string) => {
+	const properties = [];
+	const matches = Array.from(propertySection.matchAll(Regex.Property));
+
+	for (const match of matches) {
+		console.log(match);
+		properties.push({ key: match[1], value: match[2] ?? match[3] });
+	}
+
+	return properties;
+};
+
+// obsidian 문서를 Anki에 넣을 수 있도록 파싱
+const parseContent = (content: string) => {
+	const match = content.match(Regex.ContentFrontBack);
+	if (match == null) return null;
+	return { front: match[1], back: match[2] };
+};
+
+const isZettelAnkiFormat = (content: string): boolean => {
+	return true;
+};
+
+export {
+	extractPropertySection,
+	extractContent,
+	hasProperty,
+	hasPropertySection,
+	obsidianToMarkdown,
+	parseProperties,
+	parseContent,
+};

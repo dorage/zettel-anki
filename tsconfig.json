@@ -8,6 +8,7 @@
     "allowJs": true,
     "noImplicitAny": true,
     "moduleResolution": "node",
+    "esModuleInterop": true,             // CommonJS 모듈을 ES 모듈처럼 가져올 수 있도록 지원
     "importHelpers": true,
     "isolatedModules": true,
     "strictNullChecks": true,
