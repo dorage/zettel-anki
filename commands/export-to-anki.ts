@@ -63,7 +63,6 @@ const addNote = async (note: {
 	});
 
 	const json = await req.json;
-	console.log(json);
 };
 
 const exportToAnki: EditorCallback = async (editor, ctx) => {
@@ -83,10 +82,6 @@ const exportToAnki: EditorCallback = async (editor, ctx) => {
 		// markdown content를 HTML로 변환하기
 		// src들을 찾고, path로 변경
 		// AnkiConnect 서버로 전송하기
-
-		console.log(path.resolve(rootPath, "name.jopg"));
-		console.log(path.resolve(rootPath, "../name.jopg"));
-		console.log(html.value);
 
 		await addNote({
 			deck: "zettel-anki",

@@ -1,6 +1,7 @@
 import { addMandatoryProperties } from "commands/add-mandatory-property";
-import { exportToAnki } from "commands/export-to-anki";
-import { Plugin } from "obsidian";
+import { Notice, Plugin, TFile } from "obsidian";
+import * as path from "path";
+import { addNote, findNote, storeMediaFile } from "utils/anki";
 import {
 	extractContent,
 	extractPropertySection,
@@ -8,6 +9,7 @@ import {
 	parseContent,
 	parseProperties,
 } from "utils/markdown";
+import { getVaultPath } from "utils/obsidian";
 import { markdownToHTML } from "utils/remark";
 
 // Remember to rename these classes and interfaces!
@@ -23,25 +25,71 @@ const DEFAULT_SETTINGS: ZettelAnkiPluginSettings = {
 export default class ZettelAnkiPlugin extends Plugin {
 	settings: ZettelAnkiPluginSettings;
 
-	private async isZettelAnkiFormat() {
-		const vault = this.app.vault;
-		const file = this.app.workspace.getActiveFile();
-		if (file == null) return;
-		const rawMarkdown = await vault.read(file);
+	private isExportingToAnki = false;
 
+	private async exportResourceToAnki(file: TFile) {
+		return storeMediaFile({
+			filename: file.name,
+			path: path.resolve(getVaultPath(), file.path),
+		});
+	}
+
+	private async exportZettelToAnki(file: TFile) {
+		const rawMarkdown = await this.app.vault.read(file);
+
+		// 프로퍼티가 존재하는지 확인
 		const rawPropertySction = extractPropertySection(rawMarkdown);
+		if (rawPropertySction == null) return;
+
+		// 특정 프로퍼티들이 존재하는지 확인
+		const properties = parseProperties(rawPropertySction!);
+		if (
+			properties.find((x) => x.key === "id") == null ||
+			properties.find((x) => x.key === "anki") == null
+		) {
+			return;
+		}
+
 		const rawContent = extractContent(rawMarkdown);
+		const content = parseContent(rawContent!);
 
-		const propertySection = parseProperties(rawPropertySction ?? "");
-		const content = parseContent(rawContent ?? "");
+		const id = properties.find((v) => v.key === "id")!.value;
+		if (await findNote("zettel-anki", id)) {
+			console.error("이미 추가된 노트");
+			return;
+		}
 
-		const id = propertySection.find((v) => v.key === "id")!;
-		const anki = propertySection.find((v) => v.key === "anki")!;
-		const tags = propertySection.find((v) => v.key === "tags")!;
+		const front = (
+			await markdownToHTML(obsidianToMarkdown(content!.front))
+		).value.toString();
+		const back = (
+			await markdownToHTML(obsidianToMarkdown(content!.back))
+		).value.toString();
+
+		return addNote({
+			deck: "zettel-anki",
+			fields: {
+				id,
+				front,
+				back,
+			},
+			tags: [],
+		});
 	}
 
 	async onload() {
 		await this.loadSettings();
+
+		this.app.vault.on("modify", async (file) => {
+			// const tfile = this.app.vault.getFileByPath(file.path);
+			// if (tfile == null) {
+			// 	return;
+			// }
+			// const content = await this.app.vault.read(tfile);
+			// const rawPropertySction = extractPropertySection(content);
+			// const rawContent = extractContent(content);
+			// const propertySection = parseProperties(rawPropertySction ?? "");
+		});
 
 		this.addCommand({
 			id: "add-mandatory-property",
@@ -52,52 +100,19 @@ export default class ZettelAnkiPlugin extends Plugin {
 		this.addCommand({
 			id: "export-to-anki",
 			name: "Export to Anki",
-			editorCallback: exportToAnki,
-		});
-
-		this.addCommand({
-			id: "extract-property",
-			name: "Extract Property",
 			editorCallback: async (editor, ctx) => {
-				const vault = ctx.app.vault;
-				const file = ctx.app.workspace.getActiveFile();
-				if (file == null) return;
-				const rawMarkdown = await vault.read(file);
-
-				const rawPropertySction = extractPropertySection(rawMarkdown);
-				const rawContent = extractContent(rawMarkdown);
-				const properties = parseProperties(rawPropertySction!);
-				const content = parseContent(rawContent!);
-
-				console.log(
-					(await markdownToHTML(obsidianToMarkdown(content!.front)))
-						.value,
-					(await markdownToHTML(obsidianToMarkdown(content!.back)))
-						.value,
-				);
-			},
-		});
-
-		this.addCommand({
-			id: "export-to-html",
-			name: "Export to HTML",
-			editorCallback: async (editor, ctx) => {
-				const vault = ctx.app.vault;
-				const file = ctx.app.workspace.getActiveFile();
-				if (file == null) return;
-				const rawMarkdown = await vault.read(file);
-
-				const rawPropertySction = extractPropertySection(rawMarkdown);
-				const rawContent = extractContent(rawMarkdown);
-
-				const propertySection = parseProperties(
-					rawPropertySction ?? "",
-				);
-				const content = parseContent(rawContent ?? "");
-
-				const id = propertySection.find((v) => v.key === "id")!;
-				const anki = propertySection.find((v) => v.key === "anki")!;
-				const tags = propertySection.find((v) => v.key === "tags")!;
+				if (this.isExportingToAnki) return;
+				this.isExportingToAnki = true;
+				new Notice(`Anki로 업로드 시작`);
+				const promises = ctx.app.vault.getFiles().map((file) => {
+					return file.extension === "md"
+						? this.exportZettelToAnki(file)
+						: this.exportResourceToAnki(file);
+				});
+				const results = await Promise.all(promises);
+				console.debug(results);
+				new Notice(`Anki로 업로드 완료`);
+				this.isExportingToAnki = true;
 			},
 		});
 	}

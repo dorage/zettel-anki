@@ -47,14 +47,18 @@ const hasProperty = (content: string, name: string): boolean => {
 
 const ObsidianFormats: { [key in string]: [RegExp, string] } = {
 	LineBreak: [/\n/g, "<br/>"],
-	InternalResource: [/!\[\[([^\]]+)\]\]/g, `![]($1)`],
+	InternalImage: [/!\[\[(.*\.(?:png|jpg|gif|jpeg|webp))\]\]/g, `![]($1)`],
+	InternalAudio: [/!\[\[(.*\.(?:mp3|ogg))\]\]/g, `[sound:$1]`],
 	InternalLink: [/\[\[([^\]]+)\]\]/g, `'$1'`],
 };
+
+const extractReources = () => {};
 
 const obsidianToMarkdown = (obsidianMd: string) => {
 	return obsidianMd
 		.replace(...ObsidianFormats.LineBreak)
-		.replace(...ObsidianFormats.InternalResource)
+		.replace(...ObsidianFormats.InternalImage)
+		.replace(...ObsidianFormats.InternalAudio)
 		.replace(...ObsidianFormats.InternalLink);
 };
 
@@ -64,7 +68,6 @@ const parseProperties = (propertySection: string) => {
 	const matches = Array.from(propertySection.matchAll(Regex.Property));
 
 	for (const match of matches) {
-		console.log(match);
 		properties.push({ key: match[1], value: match[2] ?? match[3] });
 	}
 
