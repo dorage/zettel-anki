@@ -13,7 +13,7 @@ interface MandatoryProperties {
 
 const mandatoryProperties: MandatoryProperties[] = [
 	{ key: "id", value: () => Date.now().toString() },
-	{ key: "anki", value: () => "true" },
+	{ key: "anki", value: () => "false" },
 	{ key: "tags", value: () => "" },
 	{ key: "created", value: () => new Date().toLocaleString() },
 	{ key: "modified", value: () => new Date().toLocaleString() },
