@@ -77,19 +77,23 @@ export default class ZettelAnkiPlugin extends Plugin {
 		});
 	}
 
+	private async onModified() {
+		new Notice("modified");
+		// const tfile = this.app.vault.getFileByPath(file.path);
+		// if (tfile == null) {
+		// 	return;
+		// }
+		// const content = await this.app.vault.read(tfile);
+		// const rawPropertySction = extractPropertySection(content);
+		// const rawContent = extractContent(content);
+		// const propertySection = parseProperties(rawPropertySction ?? "");
+	}
+
 	async onload() {
 		await this.loadSettings();
 
-		this.app.vault.on("modify", async (file) => {
-			// const tfile = this.app.vault.getFileByPath(file.path);
-			// if (tfile == null) {
-			// 	return;
-			// }
-			// const content = await this.app.vault.read(tfile);
-			// const rawPropertySction = extractPropertySection(content);
-			// const rawContent = extractContent(content);
-			// const propertySection = parseProperties(rawPropertySction ?? "");
-		});
+		// update "modified" property
+		this.app.vault.on("modify", this.onModified);
 
 		this.addCommand({
 			id: "add-mandatory-property",
@@ -117,7 +121,9 @@ export default class ZettelAnkiPlugin extends Plugin {
 		});
 	}
 
-	onunload() {}
+	onunload() {
+		this.app.vault.off("modify", this.onModified);
+	}
 
 	async loadSettings() {
 		this.settings = Object.assign(

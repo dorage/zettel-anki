@@ -1,48 +1,49 @@
 import { EditorCallback } from "types/obsidian";
-import { hasProperty, hasPropertySection } from "utils/markdown";
+import {
+	extractContent,
+	extractPropertySection,
+	parseProperties,
+	stringifyProperties,
+} from "utils/markdown";
 
 interface MandatoryProperties {
-	name: string;
+	key: string;
 	value: () => string;
 }
 
 const mandatoryProperties: MandatoryProperties[] = [
-	{ name: "id", value: () => Date.now().toString() },
-	{ name: "anki", value: () => "true" },
-	{ name: "tags", value: () => "" },
+	{ key: "id", value: () => Date.now().toString() },
+	{ key: "anki", value: () => "true" },
+	{ key: "tags", value: () => "" },
+	{ key: "created", value: () => new Date().toLocaleString() },
+	{ key: "modified", value: () => new Date().toLocaleString() },
 ];
 
-const addMandatoryProperties: EditorCallback = async (_, ctx) => {
+const addMandatoryProperties: EditorCallback = async function (_, ctx) {
 	const vault = ctx.app.vault;
 	const file = ctx.app.workspace.getActiveFile();
 
 	if (file == null) return;
 
-	const content = await vault.read(file);
-	const lines = content.split("\n");
+	const rawMarkdown = await vault.read(file);
 
-	// property 섹션이 아예 없다면 추가
-	if (!hasPropertySection(content)) {
-		lines.unshift("---", "---");
-	}
+	const rawProperties = extractPropertySection(rawMarkdown);
+	const rawContent = extractContent(rawMarkdown);
 
-	const newLines: string[] = [];
+	const properties = parseProperties(rawProperties ?? "");
+
 	for (const mandatoryProperty of mandatoryProperties) {
-		if (hasProperty(content, mandatoryProperty.name)) continue;
-		newLines.push(
-			`${mandatoryProperty.name}: ${mandatoryProperty.value()}`,
+		const hasKey = properties.some(
+			(property) => property.key === mandatoryProperty.key,
 		);
+		if (hasKey) continue;
+		properties.push({
+			key: mandatoryProperty.key,
+			value: mandatoryProperty.value(),
+		});
 	}
 
-	let i = 0;
-	while (lines[++i] !== "---") {
-		continue;
-	}
-
-	vault.modify(
-		file,
-		[...lines.slice(0, i), ...newLines, ...lines.slice(i)].join("\n"),
-	);
+	vault.modify(file, stringifyProperties(properties) + rawContent);
 };
 
 export { addMandatoryProperties };

@@ -1,3 +1,5 @@
+type Property = { key: string; value: string };
+
 // NOTE:
 // property 규칙
 // 1. 맨 첫번째 줄이 정확히 '---' 이어야 한다.
@@ -22,6 +24,9 @@ const extractPropertySection = (content: string): string | null => {
 };
 
 const extractContent = (content: string): string | null => {
+	if (!hasPropertySection(content)) {
+		return content;
+	}
 	return content.match(Regex.Content)?.[1] ?? null;
 };
 
@@ -52,8 +57,6 @@ const ObsidianFormats: { [key in string]: [RegExp, string] } = {
 	InternalLink: [/\[\[([^\]]+)\]\]/g, `'$1'`],
 };
 
-const extractReources = () => {};
-
 const obsidianToMarkdown = (obsidianMd: string) => {
 	return obsidianMd
 		.replace(...ObsidianFormats.LineBreak)
@@ -63,7 +66,7 @@ const obsidianToMarkdown = (obsidianMd: string) => {
 };
 
 // property들을 오브젝트로 반환
-const parseProperties = (propertySection: string) => {
+const parseProperties = (propertySection: string): Property[] => {
 	const properties = [];
 	const matches = Array.from(propertySection.matchAll(Regex.Property));
 
@@ -81,8 +84,10 @@ const parseContent = (content: string) => {
 	return { front: match[1], back: match[2] };
 };
 
-const isZettelAnkiFormat = (content: string): boolean => {
-	return true;
+const stringifyProperties = (properties: Property[]): string => {
+	return `---
+${properties.map((property) => `${property.key} : \n  ${property.value}`).join("\n")}
+---\n`;
 };
 
 export {
@@ -93,4 +98,5 @@ export {
 	obsidianToMarkdown,
 	parseProperties,
 	parseContent,
+	stringifyProperties,
 };
