@@ -1,8 +1,7 @@
-import { addMandatoryProperties } from "commands/add-mandatory-property";
 import {
-	mandatoryProperties,
-	MandatoryProperty,
-	MandatoryPropertyKey,
+	mandatoryProperty,
+	mandatoryPropertyKey,
+	mandatoryPropertyKeys,
 } from "data/property";
 import { Notice, Plugin, TFile } from "obsidian";
 import * as path from "path";
@@ -13,7 +12,6 @@ import {
 	obsidianToMarkdown,
 	parseContent,
 	parseProperties,
-	stringifyProperties,
 } from "utils/markdown";
 import { getVaultPath } from "utils/obsidian";
 import { markdownToHTML } from "utils/remark";
@@ -87,8 +85,12 @@ export default class ZettelAnkiPlugin extends Plugin {
 	// modified 프로퍼티를 업데이트하는 콜백
 	private onModified = async (file: TFile) => {
 		this.app.fileManager.processFrontMatter(file, (matter) => {
-			matter[MandatoryPropertyKey.modified] =
-				MandatoryProperty.modified();
+			const anki = mandatoryPropertyKey.anki;
+			const modified = mandatoryPropertyKey.modified;
+
+			if (matter[anki] == null) return;
+
+			matter[modified] = mandatoryProperty[modified]();
 		});
 	};
 
@@ -101,7 +103,15 @@ export default class ZettelAnkiPlugin extends Plugin {
 		this.addCommand({
 			id: "add-mandatory-property",
 			name: "Add mandatory properties",
-			editorCallback: addMandatoryProperties,
+			editorCallback: (_, ctx) => {
+				if (ctx.file == null) return;
+
+				ctx.app.fileManager.processFrontMatter(ctx.file, (matter) => {
+					for (const key of mandatoryPropertyKeys) {
+						matter[key] = mandatoryProperty[key]();
+					}
+				});
+			},
 		});
 
 		this.addCommand({

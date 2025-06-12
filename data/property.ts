@@ -1,9 +1,4 @@
-interface MandatoryProperty {
-	key: string;
-	value: () => string;
-}
-
-const MandatoryPropertyKey: { [key in MandatoryPropertyKey]: string } = {
+const mandatoryPropertyKey = {
 	id: "id",
 	anki: "anki",
 	tags: "tags",
@@ -11,9 +6,13 @@ const MandatoryPropertyKey: { [key in MandatoryPropertyKey]: string } = {
 	modified: "modified",
 };
 
-type MandatoryPropertyKey = "id" | "anki" | "tags" | "created" | "modified";
+const mandatoryPropertyKeys = Reflect.ownKeys(
+	mandatoryPropertyKey,
+) as (keyof typeof mandatoryPropertyKey)[];
 
-const MandatoryProperty: { [key in MandatoryPropertyKey]: () => any } = {
+const mandatoryProperty: {
+	[key in (typeof mandatoryPropertyKey)[keyof typeof mandatoryPropertyKey]]: () => any;
+} = {
 	id: () => Date.now().toString(),
 	anki: () => false,
 	tags: () => [],
@@ -21,18 +20,4 @@ const MandatoryProperty: { [key in MandatoryPropertyKey]: () => any } = {
 	modified: () => new Date().toLocaleString(),
 };
 
-const mandatoryProperties: MandatoryProperty[] = [
-	{ key: MandatoryPropertyKey.id, value: () => Date.now().toString() },
-	{ key: MandatoryPropertyKey.anki, value: () => "false" },
-	{ key: MandatoryPropertyKey.tags, value: () => "" },
-	{
-		key: MandatoryPropertyKey.created,
-		value: () => new Date().toLocaleString(),
-	},
-	{
-		key: MandatoryPropertyKey.modified,
-		value: () => new Date().toLocaleString(),
-	},
-];
-
-export { MandatoryPropertyKey, mandatoryProperties, MandatoryProperty };
+export { mandatoryProperty, mandatoryPropertyKey, mandatoryPropertyKeys };
