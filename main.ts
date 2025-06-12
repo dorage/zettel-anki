@@ -1,5 +1,9 @@
 import { addMandatoryProperties } from "commands/add-mandatory-property";
-import { MandatoryPropertyKey } from "data/property";
+import {
+	mandatoryProperties,
+	MandatoryProperty,
+	MandatoryPropertyKey,
+} from "data/property";
 import { Notice, Plugin, TFile } from "obsidian";
 import * as path from "path";
 import { addNote, findNote, storeMediaFile } from "utils/anki";
@@ -9,6 +13,7 @@ import {
 	obsidianToMarkdown,
 	parseContent,
 	parseProperties,
+	stringifyProperties,
 } from "utils/markdown";
 import { getVaultPath } from "utils/obsidian";
 import { markdownToHTML } from "utils/remark";
@@ -44,17 +49,18 @@ export default class ZettelAnkiPlugin extends Plugin {
 
 		// 특정 프로퍼티들이 존재하는지 확인
 		const properties = parseProperties(rawPropertySction!);
-		if (
-			properties.find((x) => x.key === "id") == null ||
-			properties.find((x) => x.key === "anki") == null
-		) {
-			return;
-		}
+
+		const anki = properties.find((v) => v.key === "anki")?.value;
+		const id = properties.find((v) => v.key === "id")?.value;
+
+		// 프로퍼티가 없을 경우
+		if (anki == null || id == null) return;
+		// anki 가 아직 활성화되지 않은 경우
+		if (anki === "false") return;
 
 		const rawContent = extractContent(rawMarkdown);
 		const content = parseContent(rawContent!);
 
-		const id = properties.find((v) => v.key === "id")!.value;
 		if (await findNote("zettel-anki", id)) {
 			console.error("이미 추가된 노트");
 			return;
@@ -78,17 +84,13 @@ export default class ZettelAnkiPlugin extends Plugin {
 		});
 	}
 
-	private async onModified() {
-		new Notice("modified");
-		// const tfile = this.app.vault.getFileByPath(file.path);
-		// if (tfile == null) {
-		// 	return;
-		// }
-		// const content = await this.app.vault.read(tfile);
-		// const rawPropertySction = extractPropertySection(content);
-		// const rawContent = extractContent(content);
-		// const propertySection = parseProperties(rawPropertySction ?? "");
-	}
+	// modified 프로퍼티를 업데이트하는 콜백
+	private onModified = async (file: TFile) => {
+		this.app.fileManager.processFrontMatter(file, (matter) => {
+			matter[MandatoryPropertyKey.modified] =
+				MandatoryProperty.modified();
+		});
+	};
 
 	async onload() {
 		await this.loadSettings();

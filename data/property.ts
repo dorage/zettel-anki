@@ -3,12 +3,22 @@ interface MandatoryProperty {
 	value: () => string;
 }
 
-const MandatoryPropertyKey = {
+const MandatoryPropertyKey: { [key in MandatoryPropertyKey]: string } = {
 	id: "id",
 	anki: "anki",
 	tags: "tags",
 	created: "created",
 	modified: "modified",
+};
+
+type MandatoryPropertyKey = "id" | "anki" | "tags" | "created" | "modified";
+
+const MandatoryProperty: { [key in MandatoryPropertyKey]: () => any } = {
+	id: () => Date.now().toString(),
+	anki: () => false,
+	tags: () => [],
+	created: () => new Date().toLocaleString(),
+	modified: () => new Date().toLocaleString(),
 };
 
 const mandatoryProperties: MandatoryProperty[] = [
@@ -25,4 +35,4 @@ const mandatoryProperties: MandatoryProperty[] = [
 	},
 ];
 
-export { MandatoryPropertyKey, mandatoryProperties };
+export { MandatoryPropertyKey, mandatoryProperties, MandatoryProperty };
