@@ -1,4 +1,4 @@
-import { MandatoryPropertyKey } from "enums/property";
+import { mandatoryProperties } from "data/property";
 import { EditorCallback } from "types/obsidian";
 import {
 	extractContent,
@@ -6,25 +6,6 @@ import {
 	parseProperties,
 	stringifyProperties,
 } from "utils/markdown";
-
-interface MandatoryProperties {
-	key: string;
-	value: () => string;
-}
-
-const mandatoryProperties: MandatoryProperties[] = [
-	{ key: MandatoryPropertyKey.id, value: () => Date.now().toString() },
-	{ key: MandatoryPropertyKey.anki, value: () => "false" },
-	{ key: MandatoryPropertyKey.tags, value: () => "" },
-	{
-		key: MandatoryPropertyKey.created,
-		value: () => new Date().toLocaleString(),
-	},
-	{
-		key: MandatoryPropertyKey.modified,
-		value: () => new Date().toLocaleString(),
-	},
-];
 
 const addMandatoryProperties: EditorCallback = async function (_, ctx) {
 	const vault = ctx.app.vault;

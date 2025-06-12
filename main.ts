@@ -1,4 +1,5 @@
 import { addMandatoryProperties } from "commands/add-mandatory-property";
+import { MandatoryPropertyKey } from "data/property";
 import { Notice, Plugin, TFile } from "obsidian";
 import * as path from "path";
 import { addNote, findNote, storeMediaFile } from "utils/anki";
