@@ -108,6 +108,7 @@ export default class ZettelAnkiPlugin extends Plugin {
 
 				ctx.app.fileManager.processFrontMatter(ctx.file, (matter) => {
 					for (const key of mandatoryPropertyKeys) {
+						if (matter[key] != null) continue;
 						matter[key] = mandatoryProperty[key]();
 					}
 				});
